@@ -1,5 +1,7 @@
 #include "historyLookup.h"
 
+#include <cmath>
+
 #include "temperature.bin.h"
 
 char getTemperaturePixelAtRaw(const char* const temperaturePixels, const long mapIndex, const long x, const long y) {
@@ -11,94 +13,70 @@ char getTemperaturePixelAtRaw(const char* const temperaturePixels, const long ma
     ];
 }
 
-bool decodeTemperaturePixel(Uncertain& output, const char pixel) {
+double decodeTemperaturePixel(const char pixel) {
     switch (pixel) {
         case 0:
-            output = {-5.0, 5.0};
-            return true;
+            return -5.0;
         case 1:
-            output = {5.0, 5.0};
-            return true;
+            return 5.0;
         case 2:
-            output = {15.0, 5.0};
-            return true;
+            return 15.0;
         case 3:
-            output = {25.0, 5.0};
-            return true;
+            return 25.0;
         case 4:
-            output = {35.0, 5.0};
-            return true;
+            return 35.0;
         case 5:
-            output = {45.0, 5.0};
-            return true;
+            return 45.0;
         case 6:
-            output = {55.0, 5.0};
-            return true;
+            return 55.0;
         case 7:
-            output = {65.0, 5.0};
-            return true;
+            return 65.0;
         case 8:
-            output = {75.0, 5.0};
-            return true;
+            return 75.0;
         case 9:
-            output = {85.0, 5.0};
-            return true;
+            return 85.0;
         case 10:
-            output = {95.0, 5.0};
-            return true;
+            return 95.0;
         case 11:
-            output = {105.0, 5.0};
-            return true;
+            return 105.0;
         default:
-            return false;
+            return NAN;
     }
 }
 
-Uncertain getTemperaturePixelAtStable(const char* const temperaturePixels, const long mapIndex, const long x, const long y) {
-    Uncertain t;
-    if (decodeTemperaturePixel(t, getTemperaturePixelAtRaw(temperaturePixels, mapIndex, x, y))) {
-        return t;
+void reduceTemperature(double& accumulator, int& count, const char* const rainPixels, const long mapIndex, const long x, const long y) {
+    const double rain = decodeTemperaturePixel(getTemperaturePixelAtRaw(rainPixels, mapIndex, x, y));
+    if (std::isnan(rain)) return;
+    accumulator += rain;
+    count++;
+}
+
+double getTemperaturePixelAtStable(const char* const temperaturePixels, const long mapIndex, const long x, const long y) {
+    double accumulator = 0;
+    int count = 0;
+    reduceTemperature(accumulator, count, temperaturePixels, mapIndex, x, y);
+    if (count) {
+        return accumulator;
     }
     for (long delta = 1; true; delta++) {
-        Uncertain accumulator = {0, 0};
-        int count = 0;
         for (long xPrime = x - delta; xPrime <= x + delta; xPrime++) {
-            if (decodeTemperaturePixel(t, getTemperaturePixelAtRaw(temperaturePixels, mapIndex, xPrime, y - delta))) {
-                accumulator = add(accumulator, t);
-                count++;
-            }
-            if (decodeTemperaturePixel(t, getTemperaturePixelAtRaw(temperaturePixels, mapIndex, xPrime, y + delta))) {
-                accumulator = add(accumulator, t);
-                count++;
-            }
+            reduceTemperature(accumulator, count, temperaturePixels, mapIndex, xPrime, y - delta);
+            reduceTemperature(accumulator, count, temperaturePixels, mapIndex, xPrime, y + delta);
         }
         for (long yPrime = y - delta + 1; yPrime <= y + delta - 1; yPrime++) {
-            if (decodeTemperaturePixel(t, getTemperaturePixelAtRaw(temperaturePixels, mapIndex, x - delta, yPrime))) {
-                accumulator = add(accumulator, t);
-                count++;
-            }
-            if (decodeTemperaturePixel(t, getTemperaturePixelAtRaw(temperaturePixels, mapIndex, x + delta, yPrime))) {
-                accumulator = add(accumulator, t);
-                count++;
-            }
+            reduceTemperature(accumulator, count, temperaturePixels, mapIndex, x - delta, yPrime);
+            reduceTemperature(accumulator, count, temperaturePixels, mapIndex, x + delta, yPrime);
         }
-        if (count < 1) {
-            continue;
+        if (count) {
+            return accumulator / ((double)count);
         }
-        return scale(accumulator, ((double)1) / ((double)count) );
     }
 }
 
-Uncertain getHistoricalTemperatureAt(const char* const temperaturePixels, const double* const normalizedWeights, const long x, const long y) {
-    Uncertain accumulator = {0, 0};
+double getHistoricalTemperatureAt(const char* const temperaturePixels, const double* const normalizedWeights, const long x, const long y) {
+    double accumulator = 0;
     for (long mapIndex = 0; mapIndex < TEMPERATURE_MAP_COUNT; mapIndex++) {
-        accumulator = add(
-            accumulator,
-            scale(
-                getTemperaturePixelAtStable(temperaturePixels, mapIndex, x, y),
-                normalizedWeights[mapIndex]
-                )
-            );
+        accumulator += getTemperaturePixelAtStable(temperaturePixels, mapIndex, x, y) * normalizedWeights[mapIndex];
     }
     return accumulator;
 }

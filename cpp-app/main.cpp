@@ -27,7 +27,7 @@ double* initializeTemperatureWeights() {
 
 #include "randomGenerator.h"
 
-double weatherGoodnessScore(Uncertain rain, Uncertain temperature) {
+double weatherGoodnessScore(double rain, double temperature) {
     // MOCK!!!
     return randomGenerator.getRandom();
 }
@@ -39,8 +39,8 @@ Point generateAGoodPoint(const char* const rainPixels, const char* const tempera
         const Point candidate = randomPointInUs();
         const ImageCoordinates rainCoordinates = predictRainImageCoordinates(candidate.latitude, candidate.longitude);
         const ImageCoordinates temperatureCoordiantes = predictTemperatureImageCoordinates(candidate.latitude, candidate.longitude);
-        const Uncertain rain = getHistoricalRainAt(rainPixels, rainWeights, rainCoordinates.x, rainCoordinates.y);
-        const Uncertain temperature = getHistoricalTemperatureAt(temperaturePixels, temperatureWeights, temperatureCoordiantes.x, temperatureCoordiantes.y);
+        const double rain = getHistoricalRainAt(rainPixels, rainWeights, rainCoordinates.x, rainCoordinates.y);
+        const double temperature = getHistoricalTemperatureAt(temperaturePixels, temperatureWeights, temperatureCoordiantes.x, temperatureCoordiantes.y);
         const double score = weatherGoodnessScore(rain, temperature);
         if (i == 0 || score > bestScore) {
             bestPoint = candidate;
