@@ -17,4 +17,4 @@ private:
     std::mt19937 generator_; // Mersenne Twister engine
 };
 
-RandomGenerator randomGenerator;
+extern RandomGenerator randomGenerator;
