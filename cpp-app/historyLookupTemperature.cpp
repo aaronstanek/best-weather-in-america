@@ -44,10 +44,10 @@ double decodeTemperaturePixel(const char pixel) {
     }
 }
 
-void reduceTemperature(double& accumulator, int& count, const std::vector<char>& rainPixels, const long mapIndex, const long x, const long y) {
-    const double rain = decodeTemperaturePixel(getTemperaturePixelAtRaw(rainPixels, mapIndex, x, y));
-    if (std::isnan(rain)) return;
-    accumulator += rain;
+void reduceTemperature(double& accumulator, int& count, const std::vector<char>& temperaturePixels, const long mapIndex, const long x, const long y) {
+    const double temperature = decodeTemperaturePixel(getTemperaturePixelAtRaw(temperaturePixels, mapIndex, x, y));
+    if (std::isnan(temperature)) return;
+    accumulator += temperature;
     count++;
 }
 
