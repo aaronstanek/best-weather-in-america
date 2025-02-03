@@ -73,7 +73,7 @@ double getTemperaturePixelAtStable(const char* const temperaturePixels, const lo
     }
 }
 
-double getHistoricalTemperatureAt(const char* const temperaturePixels, const double* const normalizedWeights, const long x, const long y) {
+double getHistoricalTemperatureAt(const char* const temperaturePixels, const std::vector<double>& normalizedWeights, const long x, const long y) {
     double accumulator = 0;
     for (long mapIndex = 0; mapIndex < TEMPERATURE_MAP_COUNT; mapIndex++) {
         accumulator += getTemperaturePixelAtStable(temperaturePixels, mapIndex, x, y) * normalizedWeights[mapIndex];

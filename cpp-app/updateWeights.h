@@ -1,5 +1,7 @@
 #pragma once
 
-void updateRainWeights(const char* const rainPixels, double* const rainWeights, const long x, const long y, const double observation);
+#include <vector>
 
-void updateTemperatureWeights(const char* const temperaturePixels, double* const temperatureWeights, const long x, const long y, const double observation);
+void updateRainWeights(const char* const rainPixels, std::vector<double>& rainWeights, const long x, const long y, const double observation);
+
+void updateTemperatureWeights(const char* const temperaturePixels, std::vector<double>& temperatureWeights, const long x, const long y, const double observation);

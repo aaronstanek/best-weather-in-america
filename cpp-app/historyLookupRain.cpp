@@ -81,7 +81,7 @@ double getRainPixelAtStable(const char* const rainPixels, const long mapIndex, c
     }
 }
 
-double getHistoricalRainAt(const char* const rainPixels, const double* const normalizedWeights, const long x, const long y) {
+double getHistoricalRainAt(const char* const rainPixels, const std::vector<double>& normalizedWeights, const long x, const long y) {
     double accumulator = 0;
     for (long mapIndex = 0; mapIndex < RAIN_MAP_COUNT; mapIndex++) {
         accumulator += getRainPixelAtStable(rainPixels, mapIndex, x, y) * normalizedWeights[mapIndex];

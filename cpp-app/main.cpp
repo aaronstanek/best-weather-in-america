@@ -8,22 +8,7 @@
 #include "updateWeights.h"
 
 #include <iostream>
-
-double* initializeRainWeights() {
-    double* const rainWeights = new double[RAIN_MAP_COUNT];
-    for (unsigned int i = 0; i < RAIN_MAP_COUNT; i++) {
-        rainWeights[i] = (((double)1)/((double)RAIN_MAP_COUNT));
-    }
-    return rainWeights;
-}
-
-double* initializeTemperatureWeights() {
-    double* const temperatureWeights = new double[TEMPERATURE_MAP_COUNT];
-    for (unsigned int i = 0; i < TEMPERATURE_MAP_COUNT; i++) {
-        temperatureWeights[i] = (((double)1)/((double)TEMPERATURE_MAP_COUNT));
-    }
-    return temperatureWeights;
-}
+#include <vector>
 
 #include "randomGenerator.h"
 
@@ -32,7 +17,7 @@ double weatherGoodnessScore(double rain, double temperature) {
     return randomGenerator.getRandom();
 }
 
-Point generateAGoodPoint(const char* const rainPixels, const char* const temperaturePixels, const double* const rainWeights, const double* const temperatureWeights) {
+Point generateAGoodPoint(const char* const rainPixels, const char* const temperaturePixels, const std::vector<double>& rainWeights, const std::vector<double>& temperatureWeights) {
     Point bestPoint;
     double bestScore;
     for (int i = 0; i < 1000; i++) {
@@ -86,7 +71,7 @@ double receiveDouble() {
     return *((double*)(&bytes[0]));
 }
 
-void receiveUpdate(const char* const rainPixels, const char* const temperaturePixels, double* const rainWeights, double* const temperatureWeights) {
+void receiveUpdate(const char* const rainPixels, const char* const temperaturePixels, std::vector<double>& rainWeights, std::vector<double>& temperatureWeights) {
     const double latitude = receiveDouble();
     const double longitude = receiveDouble();
     // rain
@@ -102,8 +87,8 @@ void receiveUpdate(const char* const rainPixels, const char* const temperaturePi
 int main() {
     const char* const rainPixels = loadRainPixels();
     const char* const temperaturePixels = loadTemperaturePixels();
-    double* const rainWeights = initializeRainWeights();
-    double* const temperatureWeights = initializeTemperatureWeights();
+    std::vector<double> rainWeights(RAIN_MAP_COUNT, ((double)1)/((double)RAIN_MAP_COUNT) );
+    std::vector<double> temperatureWeights(TEMPERATURE_MAP_COUNT, ((double)1)/((double)TEMPERATURE_MAP_COUNT));
     while (true) {
         char command;
         std::cin.get(command);
