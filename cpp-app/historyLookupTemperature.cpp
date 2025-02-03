@@ -4,7 +4,7 @@
 
 #include "temperature.bin.h"
 
-char getTemperaturePixelAtRaw(const char* const temperaturePixels, const long mapIndex, const long x, const long y) {
+char getTemperaturePixelAtRaw(const std::vector<char>& temperaturePixels, const long mapIndex, const long x, const long y) {
     if (mapIndex < 0 || mapIndex >= TEMPERATURE_MAP_COUNT || x < 0 || x >= TEMPERATURE_MAP_WIDTH || y < 0 || y >= TEMPERATURE_MAP_HEIGHT) {
         return 100;
     }
@@ -44,14 +44,14 @@ double decodeTemperaturePixel(const char pixel) {
     }
 }
 
-void reduceTemperature(double& accumulator, int& count, const char* const rainPixels, const long mapIndex, const long x, const long y) {
+void reduceTemperature(double& accumulator, int& count, const std::vector<char>& rainPixels, const long mapIndex, const long x, const long y) {
     const double rain = decodeTemperaturePixel(getTemperaturePixelAtRaw(rainPixels, mapIndex, x, y));
     if (std::isnan(rain)) return;
     accumulator += rain;
     count++;
 }
 
-double getTemperaturePixelAtStable(const char* const temperaturePixels, const long mapIndex, const long x, const long y) {
+double getTemperaturePixelAtStable(const std::vector<char>& temperaturePixels, const long mapIndex, const long x, const long y) {
     double accumulator = 0;
     int count = 0;
     reduceTemperature(accumulator, count, temperaturePixels, mapIndex, x, y);
@@ -73,7 +73,7 @@ double getTemperaturePixelAtStable(const char* const temperaturePixels, const lo
     }
 }
 
-double getHistoricalTemperatureAt(const char* const temperaturePixels, const std::vector<double>& normalizedWeights, const long x, const long y) {
+double getHistoricalTemperatureAt(const std::vector<char>& temperaturePixels, const std::vector<double>& normalizedWeights, const long x, const long y) {
     double accumulator = 0;
     for (long mapIndex = 0; mapIndex < TEMPERATURE_MAP_COUNT; mapIndex++) {
         accumulator += getTemperaturePixelAtStable(temperaturePixels, mapIndex, x, y) * normalizedWeights[mapIndex];

@@ -4,7 +4,7 @@
 
 #include "rain.bin.h"
 
-char getRainPixelAtRaw(const char* const rainPixels, const long mapIndex, const long x, const long y) {
+char getRainPixelAtRaw(const std::vector<char>& rainPixels, const long mapIndex, const long x, const long y) {
     if (mapIndex < 0 || mapIndex >= RAIN_MAP_COUNT || x < 0 || x >= RAIN_MAP_WIDTH || y < 0 || y >= RAIN_MAP_HEIGHT) {
         return 100;
     }
@@ -52,14 +52,14 @@ double decodeRainPixel(const char pixel) {
     }
 }
 
-void reduceRain(double& accumulator, int& count, const char* const rainPixels, const long mapIndex, const long x, const long y) {
+void reduceRain(double& accumulator, int& count, const std::vector<char>& rainPixels, const long mapIndex, const long x, const long y) {
     const double rain = decodeRainPixel(getRainPixelAtRaw(rainPixels, mapIndex, x, y));
     if (std::isnan(rain)) return;
     accumulator += rain;
     count++;
 }
 
-double getRainPixelAtStable(const char* const rainPixels, const long mapIndex, const long x, const long y) {
+double getRainPixelAtStable(const std::vector<char>& rainPixels, const long mapIndex, const long x, const long y) {
     double accumulator = 0;
     int count = 0;
     reduceRain(accumulator, count, rainPixels, mapIndex, x, y);
@@ -81,7 +81,7 @@ double getRainPixelAtStable(const char* const rainPixels, const long mapIndex, c
     }
 }
 
-double getHistoricalRainAt(const char* const rainPixels, const std::vector<double>& normalizedWeights, const long x, const long y) {
+double getHistoricalRainAt(const std::vector<char>& rainPixels, const std::vector<double>& normalizedWeights, const long x, const long y) {
     double accumulator = 0;
     for (long mapIndex = 0; mapIndex < RAIN_MAP_COUNT; mapIndex++) {
         accumulator += getRainPixelAtStable(rainPixels, mapIndex, x, y) * normalizedWeights[mapIndex];

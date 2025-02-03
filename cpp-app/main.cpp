@@ -17,7 +17,7 @@ double weatherGoodnessScore(double rain, double temperature) {
     return randomGenerator.getRandom();
 }
 
-Point generateAGoodPoint(const char* const rainPixels, const char* const temperaturePixels, const std::vector<double>& rainWeights, const std::vector<double>& temperatureWeights) {
+Point generateAGoodPoint(const std::vector<char>& rainPixels, const std::vector<char>& temperaturePixels, const std::vector<double>& rainWeights, const std::vector<double>& temperatureWeights) {
     Point bestPoint;
     double bestScore;
     for (int i = 0; i < 1000; i++) {
@@ -71,7 +71,7 @@ double receiveDouble() {
     return *((double*)(&bytes[0]));
 }
 
-void receiveUpdate(const char* const rainPixels, const char* const temperaturePixels, std::vector<double>& rainWeights, std::vector<double>& temperatureWeights) {
+void receiveUpdate(const std::vector<char>& rainPixels, const std::vector<char>& temperaturePixels, std::vector<double>& rainWeights, std::vector<double>& temperatureWeights) {
     const double latitude = receiveDouble();
     const double longitude = receiveDouble();
     // rain
@@ -85,8 +85,10 @@ void receiveUpdate(const char* const rainPixels, const char* const temperaturePi
 }
 
 int main() {
-    const char* const rainPixels = loadRainPixels();
-    const char* const temperaturePixels = loadTemperaturePixels();
+    std::vector<char> rainPixels;
+    loadRainPixels(rainPixels);
+    std::vector<char> temperaturePixels;
+    loadTemperaturePixels(temperaturePixels);
     std::vector<double> rainWeights(RAIN_MAP_COUNT, ((double)1)/((double)RAIN_MAP_COUNT) );
     std::vector<double> temperatureWeights(TEMPERATURE_MAP_COUNT, ((double)1)/((double)TEMPERATURE_MAP_COUNT));
     while (true) {

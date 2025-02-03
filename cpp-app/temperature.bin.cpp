@@ -2,9 +2,10 @@
 
 #include <fstream>
 
-char* loadTemperaturePixels() {
-    char* temperaturePixels = new char[TEMPERATURE_MAP_COUNT * TEMPERATURE_MAP_WIDTH * TEMPERATURE_MAP_HEIGHT];
+#define TEMPERATURE_PIXEL_COUNT (TEMPERATURE_MAP_COUNT * TEMPERATURE_MAP_WIDTH * TEMPERATURE_MAP_HEIGHT)
+
+void loadTemperaturePixels(std::vector<char>& temperaturePixels) {
+    temperaturePixels.resize(TEMPERATURE_PIXEL_COUNT);
     std::ifstream file("temperature.bin", std::ios::binary);
-    file.read(temperaturePixels, TEMPERATURE_MAP_COUNT * TEMPERATURE_MAP_WIDTH * TEMPERATURE_MAP_HEIGHT);
-    return temperaturePixels;
+    file.read(temperaturePixels.data(), TEMPERATURE_PIXEL_COUNT);
 }

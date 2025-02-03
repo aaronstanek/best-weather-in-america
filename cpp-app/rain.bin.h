@@ -4,4 +4,6 @@
 #define RAIN_MAP_WIDTH (330)
 #define RAIN_MAP_HEIGHT (237)
 
-char* loadRainPixels();
+#include <vector>
+
+void loadRainPixels(std::vector<char>& rainPixels);
