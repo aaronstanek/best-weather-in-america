@@ -14,4 +14,4 @@ RUN pip install requests==2.32.3 pytz==2024.1 google-cloud-storage==1.31.0 googl
 COPY py/* .
 COPY --from=build-stage *.so .
 
-CMD ["python", "weathervane.py"]
+CMD ["python", "web_server.py"]
