@@ -1,5 +1,4 @@
 import worker
-import weathervane_gcp
 
 import time
 import threading
@@ -139,10 +138,3 @@ def weathervane():
             del web_data
             outstanding_requests -= 1
     return history[worker.get_best_index()]
-
-t1 = time.time()
-best_location = weathervane()
-weathervane_gcp.submit_best_weather(best_location)
-t2 = time.time()
-print(f"Delta {t2-t1}")
-print(best_location)
