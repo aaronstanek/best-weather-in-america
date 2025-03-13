@@ -1,19 +1,17 @@
 from weathervane import weathervane
 from weathervane_gcp import submit_best_weather
 
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from flask import Flask, Response
 
-class MyRequestHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        try:
-            submit_best_weather(weathervane())
-            self.send_response(200)
-            self.send_header("Content-type", "text/plain")
-            self.send_header("Content-Length", "2")
-            self.end_headers()
-            self.wfile.write(b"OK")
-        except:
-            self.send_response(500)
+app = Flask(__name__)
 
-httpd = HTTPServer(('', 8080), MyRequestHandler)
-httpd.serve_forever()
+@app.route("/")
+def hello():
+    try:
+        submit_best_weather(weathervane())
+        return Response("OK", status=200, mimetype="text/plain")
+    except:
+        return Response("ERR", status=500, mimetype="text/plain")
+
+if __name__ == "__main__":
+    app.run(debug=True, port=8080, host='0.0.0.0')
