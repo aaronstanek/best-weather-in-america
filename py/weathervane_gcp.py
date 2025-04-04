@@ -33,7 +33,8 @@ def download_state(bucket):
 
 def update_state(state, obj):
     try:
-        return [obj] + state[:23]
+        one_day_ago_unix_seconds = obj["unixTimeSeconds"] - 86400
+        return [obj] + list(filter(lambda x: x["unixTimeSeconds"] >= one_day_ago_unix_seconds, state))
     except:
         return []
 
