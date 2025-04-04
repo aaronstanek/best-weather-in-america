@@ -55,11 +55,12 @@ def decode_points_api(response):
 def decode_forecast_api(response):
     try:
         obj = json.loads(response)
+        period = obj["properties"]["periods"][1]
         return {
-            "temperature": obj["properties"]["periods"][0]["temperature"],
-            "humidity": obj["properties"]["periods"][0]["relativeHumidity"]["value"],
-            "wind": int(obj["properties"]["periods"][0]["windSpeed"].split(" ")[0]),
-            "rain": obj["properties"]["periods"][0]["probabilityOfPrecipitation"]["value"]
+            "temperature": period["temperature"],
+            "humidity": period["relativeHumidity"]["value"],
+            "wind": int(period["windSpeed"].split(" ")[0]),
+            "rain": period["probabilityOfPrecipitation"]["value"]
         }
     except:
         None
