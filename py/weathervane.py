@@ -1,11 +1,25 @@
-import worker
-
 import time
 import threading
 import queue
 import json
+import random
 
 import requests
+
+def get_cities():
+    with open("cities.json", "r") as file:
+        return json.load(file)
+
+def seed_url_queue(to_url_reader):
+    cities = get_cities()
+    random.shuffle(cities)
+    for city in cities:
+        to_url_reader.put({
+            "city": city[0],
+            "state": city[1],
+            "url": city[2]
+        }, block=True, timeout=None)
+    return len(cities)
 
 request_headers = {
     "User-Agent": "(aaronstanek.com, amr.stanek@gmail.com)"
@@ -15,42 +29,21 @@ def url_retry_wrapper(url):
     retries_remaining = 3
     while retries_remaining > 0:
         try:
-            return requests.get(url, headers=request_headers).text
+            return requests.get(url, headers=request_headers, timeout=3).text
         except:
             retries_remaining -= 1
             time.sleep(0.1)
     return ""
 
 def url_reader(to_main, to_url_reader):
-    v = {}
     while True:
-        v["params"] = to_url_reader.get(block=True, timeout=None)
-        v["response"] = url_retry_wrapper(v["params"]["url"])
+        element = to_url_reader.get(block=True, timeout=None)
+        response = url_retry_wrapper(element["url"])
         to_main.put({
-            "ok": True,
-            "params": v["params"],
-            "response": v["response"]
+            "city": element["city"],
+            "state": element["state"],
+            "response": response
         }, block=True, timeout=None)
-        v = {}
-
-def nice_coordinate(n):
-    if n < 0:
-        return f"-{nice_coordinate(-n)}"
-    s = str(int(round(n * 1e4)))
-    while len(s) < 5:
-        s = "0" + s
-    return f"{s[:-4]}.{s[-4:]}"
-
-def decode_points_api(response):
-    try:
-        obj = json.loads(response)
-        return {
-            "forecast_url": obj["properties"]["forecastHourly"],
-            "city": obj["properties"]["relativeLocation"]["properties"]["city"],
-            "state": obj["properties"]["relativeLocation"]["properties"]["state"]
-        }
-    except:
-        return None
 
 def decode_forecast_api(response):
     try:
@@ -65,77 +58,42 @@ def decode_forecast_api(response):
     except:
         None
 
+def compute_badness_score(forecast):
+    score = 0.0002753038612347609 * (forecast["temperature"] - 70) ** 2
+    score += 0.00010046751836904414 * (forecast["humidity"] - 50) ** 2
+    score += 0.00014421437280512476 * (forecast["wind"] - 5) ** 2
+    score += 0.07129086834186059 * forecast["rain"] ** 0.3739738949262469
+    return score
+
 def weathervane():
     to_main = queue.Queue()
     to_url_reader = queue.Queue()
-    url_reader_count = 2
+    city_count = seed_url_queue(to_url_reader)
+    url_reader_count = 4
     threads = []
     for i in range(url_reader_count):
         threads.append(threading.Thread(target=url_reader, args=[to_main, to_url_reader], daemon=True))
         threads[-1].start()
-    target_count = 44
-    history = []
-    outstanding_requests = 0
-    failed_requests = 0
-    while len(history) < target_count:
-        if failed_requests > 10:
-            return None
-        while outstanding_requests < min(url_reader_count, target_count - len(history)):
-            worker.set_location()
-            latitude = worker.read_latitude()
-            longitude = worker.read_longitude()
-            to_url_reader.put({
-                "url": f"https://api.weather.gov/points/{nice_coordinate(latitude)},{nice_coordinate(longitude)}",
-                "type": "points",
-                "latitude": latitude,
-                "longitude": longitude
-            }, block=True, timeout=None)
-            outstanding_requests += 1
+    forecasts_processed_count = 0
+    best_score_so_far = None
+    best_city_so_far = None
+    while forecasts_processed_count < city_count:
         web_data = to_main.get(block=True, timeout=None)
-        if not web_data["ok"]:
-            del web_data
-            outstanding_requests -= 1
-            failed_requests += 1
+        forecast = decode_forecast_api(web_data["response"])
+        forecasts_processed_count += 1
+        if forecast is None:
             continue
-        if web_data["params"]["type"] == "points":
-            location = decode_points_api(web_data["response"])
-            if location is None:
-                del web_data
-                outstanding_requests -= 1
-                failed_requests += 1
-                continue
-            to_url_reader.put({
-                "url": location["forecast_url"],
-                "type": "forecast",
-                "latitude": web_data["params"]["latitude"],
-                "longitude": web_data["params"]["longitude"],
-                "city": location["city"],
-                "state": location["state"]
-            }, block=True, timeout=None)
-            del web_data
-        else:
-            forecast = decode_forecast_api(web_data["response"])
-            if forecast is None:
-                del web_data
-                outstanding_requests -= 1
-                failed_requests += 1
-                continue
-            history.append({
-                "city": web_data["params"]["city"],
-                "state": web_data["params"]["state"],
+        score = compute_badness_score(forecast)
+        if best_score_so_far is None or score < best_score_so_far:
+            best_score_so_far = score
+            best_city_so_far = {
+                "city": web_data["city"],
+                "state": web_data["state"],
                 "temperature": f"{forecast["temperature"]}°F",
                 "humidity": f"{forecast["humidity"]}%",
                 "wind": f"{forecast["wind"]} mph",
                 "rain": f"{forecast["rain"]}% chance"
-            })
-            worker.add_to_history(
-                web_data["params"]["latitude"],
-                web_data["params"]["longitude"],
-                forecast["temperature"],
-                forecast["humidity"],
-                forecast["wind"],
-                forecast["rain"]
-            )
-            del web_data
-            outstanding_requests -= 1
-    return history[worker.get_best_index()]
+            }
+    if best_city_so_far is None:
+        raise Exception("Unable to find best weather conditions")
+    return best_city_so_far
